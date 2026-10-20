@@ -35,7 +35,7 @@ def fetch_feedback():
     return [dict(row) for row in rows]
 
 
-@app.get("/
+@app.get("/")
 def home():
     return render_template("index.html")
 
