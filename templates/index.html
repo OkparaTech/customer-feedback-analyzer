@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Feedback Analyzer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    form, section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 10px; }
+    textarea, select, button { font: inherit; padding: .6rem; margin-top: .4rem; }
+    textarea { display: block; width: 95%; min-height: 90px; }
+    .cards { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .card { background: #f3f5f7; padding: 1rem; border-radius: 8px; min-width: 130px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #ddd; padding: .6rem; text-align: left; }
+    #status { min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <h1>Customer Feedback Analyzer</h1>
+  <p>Submit customer feedback and explore common themes.</p>
+
+  <form id="feedback-form">
+    <label for="customer_feedback">Your feedback</label>
+    <textarea id="customer_feedback" name="customer_feedback" required></textarea>
+    <label for="category">Category</label>
+    <select id="category" name="category">
+      <option>General</option><option>Delivery</option><option>Product</option><option>Customer Service</option><option>Pricing</option>
+    </select>
+    <button type="submit">Submit feedback</button>
+    <p id="status" role="status"></p>
+  </form>
+
+  <section>
+    <h2>Summary</h2>
+    <div id="summary-cards" class="cards">Loading summary…</div>
+  </section>
+  <section>
+    <h2>Common keywords</h2>
+    <ul id="keyword-list"><li>Loading keywords…</li></ul>
+  </section>
+  <section>
+    <h2>Customer feedback</h2>
+    <div id="feedback-table">Loading feedback…</div>
+  </section>
+
+  <script src="{{ url_for('static', filename='member5_feedback_form.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='member6_summary_cards.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='member7_keyword_chart.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='member8_feedback_table.js') }}" defer></script>
+</body>
+</html>
