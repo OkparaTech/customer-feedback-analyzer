@@ -7,11 +7,11 @@ def clean_feedback(text):
     if not isinstance(text, str):
         return "This is not a feedback"
     text = text.lower()
-    text = re.sub(r"[^a-z0-9\s]", "", text)
+    text = re.sub(r"[^\w\s₦$€£¥₹]", "", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
-feedback = "  The FOOD!!!   is   GOOD @#$  "
+feedback = " 1 The FOOD!!!   is   GOOD AT $5  "
 print(clean_feedback(feedback))
 
