@@ -2,8 +2,7 @@ import unittest
 from unittest.mock import patch
 
 import app as app_module
-from keyword_counter import count_keywords
-from preprocessing import clean_feedback
+from app import clean_feedback, count_keywords
 
 
 class HelperTests(unittest.TestCase):
