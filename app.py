@@ -133,7 +133,7 @@ def count_keywords(feedback_entries, top_n=10):
 # =====================================================================
 # 4. CATEGORIZATION & ANALYTICS  (Member 4)
 # =====================================================================
-SENTIMENTS = ["Positive", "Neutral", "Negative"]
+
 TOPICS = ["General", "Delivery", "Product", "Customer Service", "Pricing", "Feature Request"]
 
 POSITIVE_WORDS = {
