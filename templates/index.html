@@ -15,6 +15,7 @@
     [data-theme="dark"] .b-Positive{background:#143d2a;color:#7ee0a8} [data-theme="dark"] .b-Neutral{background:#4a3d12;color:#f5d26b} [data-theme="dark"] .b-Negative{background:#4a1f1f;color:#ff9a9a}
     button.theme-btn { background:var(--card); color:var(--text); border:1px solid var(--line); margin:0 .6rem 0 0; }
     * { box-sizing: border-box; }
+    [hidden] { display:none !important; }
     body { margin:0; display:flex; min-height:100vh; font-family:"Playfair Display",Georgia,"Times New Roman",serif; font-variant-numeric:lining-nums; background:var(--bg); color:var(--text); }
     .sidebar { width:230px; flex-shrink:0; background:var(--navy); color:#fff; padding:1.2rem .8rem; position:sticky; top:0; height:100vh; }
     .brand { font-weight:700; padding:.4rem .6rem 1.3rem; line-height:1.25; }
@@ -58,22 +59,22 @@
     <a href="#analytics">Analytics</a>
   </aside>
 
-  <main id="dashboard">
+  <main>
     <div class="top">
-      <div><h1>Welcome back! 👋</h1><p class="muted">Here’s what your customers are saying.</p></div>
+      <div><h1 id="page-title">Welcome back! 👋</h1><p class="muted" id="page-sub">Here’s what your customers are saying.</p></div>
       <div><button type="button" id="theme-toggle" class="theme-btn" aria-label="Switch between light and dark mode"></button><span class="muted" id="today"></span></div>
     </div>
 
-    <div id="summary-cards" class="cards">Loading summary…</div>
+    <div id="summary-cards" class="cards" data-views="dashboard analytics">Loading summary…</div>
 
-    <div class="row" id="analytics">
+    <div class="row" data-views="dashboard analytics">
       <section class="panel"><h2>Feedback Trend</h2><p class="muted">Last 7 days</p><div id="trend-chart"></div></section>
       <section class="panel"><h2>Top Keywords</h2><p class="muted">Most common words in feedback</p><div id="keyword-list">Loading keywords…</div></section>
       <section class="panel"><h2>Feedback Categories</h2><div id="category-chart" class="donut-wrap">Loading…</div></section>
     </div>
 
-    <form id="feedback-form" class="panel">
-      <h2 id="submit">Submit Feedback</h2>
+    <form id="feedback-form" class="panel" data-views="submit">
+      <h2>Submit Feedback</h2>
       <label for="customer_feedback">Your feedback</label>
       <textarea id="customer_feedback" name="customer_feedback" required></textarea>
       <label for="category">Category</label>
@@ -84,8 +85,8 @@
       <p id="status" role="status"></p>
     </form>
 
-    <section class="panel" id="all-feedback">
-      <h2>Recent Feedback</h2>
+    <section class="panel" data-views="dashboard all-feedback">
+      <h2 id="table-title">Recent Feedback</h2>
       <div id="feedback-table">Loading feedback…</div>
     </section>
   </main>
@@ -99,6 +100,34 @@
       try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
       syncLabel();
     });
+
+    // Sidebar views: each link shows only its own section
+    const views = {
+      "dashboard": ["Welcome back! 👋", "Here’s what your customers are saying.", "Recent Feedback"],
+      "submit": ["Submit Feedback", "Share your experience with us.", ""],
+      "all-feedback": ["All Feedback", "Every submission, newest first.", "All Feedback"],
+      "analytics": ["Analytics", "Detailed insights from customer feedback.", ""],
+    };
+    function showView() {
+      let view = location.hash.slice(1);
+      if (!views[view]) view = "dashboard";
+      document.querySelectorAll("[data-views]").forEach((el) => {
+        el.hidden = !el.dataset.views.split(" ").includes(view);
+      });
+      document.querySelectorAll(".sidebar a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + view));
+      const [title, sub, tableTitle] = views[view];
+      document.getElementById("page-title").textContent = title;
+      document.getElementById("page-sub").textContent = sub;
+      document.getElementById("table-title").textContent = tableTitle;
+      const wantAll = view === "all-feedback";
+      if (window.showAllFeedback !== wantAll) {
+        window.showAllFeedback = wantAll;
+        if (window.loadFeedbackTable) window.loadFeedbackTable();
+      }
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", showView);
+    document.addEventListener("DOMContentLoaded", showView);
   </script>
   <script src="{{ url_for('static', filename='member5_feedback_form.js') }}" defer></script>
   <script src="{{ url_for('static', filename='member6_summary_cards.js') }}" defer></script>

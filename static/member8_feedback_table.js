@@ -43,7 +43,7 @@ window.loadFeedbackTable = async function () {
       const toggle = document.createElement("button");
       toggle.type = "button"; toggle.className = "link";
       toggle.textContent = window.showAllFeedback ? "Show less" : "View all feedback →";
-      toggle.addEventListener("click", () => { window.showAllFeedback = !window.showAllFeedback; window.loadFeedbackTable(); });
+      toggle.addEventListener("click", () => { location.hash = window.showAllFeedback ? "#dashboard" : "#all-feedback"; });
       footer.append(toggle);
     }
     container.replaceChildren(table, footer);
