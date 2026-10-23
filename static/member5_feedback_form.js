@@ -17,10 +17,11 @@ if (feedbackForm) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not save feedback.");
-      status.textContent = "Thank you. Your feedback was saved.";
+      status.textContent = "Thank you. Your feedback was saved" + (result.category && result.category !== category ? ` under ${result.category}.` : ".");
       feedbackForm.reset();
       if (typeof window.loadFeedbackSummary === "function") window.loadFeedbackSummary();
       if (typeof window.loadFeedbackTable === "function") window.loadFeedbackTable();
+      if (typeof window.loadKeywordChart === "function") window.loadKeywordChart();
     } catch (error) {
       status.textContent = error.message;
     }

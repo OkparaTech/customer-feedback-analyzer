@@ -2,8 +2,7 @@ import unittest
 from unittest.mock import patch
 
 import app as app_module
-from keyword_counter import count_keywords
-from preprocessing import clean_feedback
+from app import clean_feedback, count_keywords
 
 
 class HelperTests(unittest.TestCase):
@@ -25,6 +24,20 @@ class ApiTests(unittest.TestCase):
 
     def test_post_feedback_requires_text(self):
         response = self.client.post("/feedback", json={"customer_feedback": " "})
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_feedback_cleans_text_before_saving(self):
+        response = self.client.post(
+            "/feedback", json={"customer_feedback": "  Doesn't work!!!  "}
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json["customer_feedback"], "doesn t work")
+        self.assertEqual(response.json["category"], "Negative")
+
+    def test_post_feedback_rejects_text_that_cleans_to_empty(self):
+        response = self.client.post("/feedback", json={"customer_feedback": "!!!"})
+
         self.assertEqual(response.status_code, 400)
 
 

@@ -4,46 +4,131 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Customer Feedback Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>try { var saved = localStorage.getItem("theme"); } catch (e) {} document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");</script>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
-    form, section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 10px; }
-    textarea, select, button { font: inherit; padding: .6rem; margin-top: .4rem; }
-    textarea { display: block; width: 95%; min-height: 90px; }
-    .cards { display: flex; flex-wrap: wrap; gap: 1rem; }
-    .card { background: #f3f5f7; padding: 1rem; border-radius: 8px; min-width: 130px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #ddd; padding: .6rem; text-align: left; }
-    #status { min-height: 1.5em; }
+    :root { --navy:#0f1b3d; --blue:#2563eb; --bg:#f5f7fb; --card:#fff; --text:#111c3b; --muted:#6b7794; --line:#e6eaf2; color-scheme:light; }
+    [data-theme="dark"] { --navy:#0a1230; --bg:#0b1020; --card:#151d36; --text:#e8ecf8; --muted:#9aa6c7; --line:#26304f; color-scheme:dark; }
+    [data-theme="dark"] .c-total{background:#1d3566} [data-theme="dark"] .c-pos{background:#14432c} [data-theme="dark"] .c-neu{background:#4a3d12} [data-theme="dark"] .c-neg{background:#4a1f1f} [data-theme="dark"] .c-feat{background:#33275a}
+    [data-theme="dark"] .b-Positive{background:#143d2a;color:#7ee0a8} [data-theme="dark"] .b-Neutral{background:#4a3d12;color:#f5d26b} [data-theme="dark"] .b-Negative{background:#4a1f1f;color:#ff9a9a}
+    button.theme-btn { background:var(--card); color:var(--text); border:1px solid var(--line); margin:0 .6rem 0 0; }
+    * { box-sizing: border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; display:flex; min-height:100vh; font-family:"Playfair Display",Georgia,"Times New Roman",serif; font-variant-numeric:lining-nums; background:var(--bg); color:var(--text); }
+    .sidebar { width:230px; flex-shrink:0; background:var(--navy); color:#fff; padding:1.2rem .8rem; position:sticky; top:0; height:100vh; }
+    .brand { font-weight:700; padding:.4rem .6rem 1.3rem; line-height:1.25; }
+    .sidebar a { display:block; color:#cfd8f3; text-decoration:none; padding:.7rem .8rem; border-radius:8px; margin-bottom:.25rem; }
+    .sidebar a:hover, .sidebar a.active { background:var(--blue); color:#fff; }
+    main { flex:1; min-width:0; padding:1.5rem 2rem; }
+    .top { display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+    h1 { margin:0; font-size:1.9rem; } .muted { color:var(--muted); margin:.3rem 0 0; }
+    .panel, .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.1rem; }
+    .panel { margin-top:1.1rem; } .panel h2 { margin:0 0 .6rem; font-size:1.05rem; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1rem; margin-top:1.1rem; }
+    .card { display:flex; gap:.8rem; align-items:center; }
+    .icon { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; font-size:1.3rem; flex-shrink:0; }
+    .c-total{background:#cfe3ff} .c-pos{background:#c9f0dc} .c-neu{background:#fde9a8} .c-neg{background:#fcc9c9} .c-feat{background:#e3d6fb}
+    .num { font-size:1.8rem; font-weight:700; line-height:1.1; } .card small { color:var(--muted); }
+    .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+    textarea, select, button { font:inherit; padding:.6rem; border:1px solid var(--line); border-radius:8px; }
+    textarea, select { background:var(--card); color:var(--text); }
+    textarea { display:block; width:100%; min-height:80px; margin:.4rem 0; }
+    button { background:var(--blue); color:#fff; border:0; cursor:pointer; margin-left:.4rem; } button.link { background:none; color:var(--blue); padding:0; }
+    #status { min-height:1.4em; margin:.5rem 0 0; }
+    table { width:100%; border-collapse:collapse; } th, td { text-align:left; padding:.6rem; border-bottom:1px solid var(--line); }
+    th { background:var(--bg); font-size:.85rem; }
+    .badge { padding:.15rem .6rem; border-radius:6px; font-size:.85rem; }
+    .b-Positive{background:#d6f5e4;color:#16794a} .b-Neutral{background:#fdf0bd;color:#8a6200} .b-Negative{background:#fcd5d5;color:#b42323}
+    .kw-row { display:flex; align-items:center; gap:.7rem; margin:.6rem 0; } .kw-word { width:90px; } .kw-count { width:2rem; text-align:right; }
+    .kw-track { flex:1; height:10px; background:var(--line); border-radius:6px; overflow:hidden; } .kw-track span { display:block; height:100%; background:var(--blue); }
+    .donut-wrap { display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; }
+    .donut { width:150px; height:150px; border-radius:50%; position:relative; }
+    .donut-center { position:absolute; inset:28px; background:var(--card); color:var(--text); border-radius:50%; display:grid; place-items:center; text-align:center; font-weight:700; }
+    .legend div { margin:.3rem 0; font-size:.9rem; } .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:.5rem; }
+    @media (max-width:760px) { body { flex-direction:column; } .sidebar { width:100%; height:auto; position:static; } main { padding:1rem; } }
   </style>
 </head>
 <body>
-  <h1>Customer Feedback Analyzer</h1>
-  <p>Submit customer feedback and explore common themes.</p>
+  <aside class="sidebar">
+    <div class="brand">💬 Customer Feedback Analyzer</div>
+    <a class="active" href="#dashboard">Dashboard</a>
+    <a href="#submit">Submit Feedback</a>
+    <a href="#all-feedback">All Feedback</a>
+    <a href="#analytics">Analytics</a>
+  </aside>
 
-  <form id="feedback-form">
-    <label for="customer_feedback">Your feedback</label>
-    <textarea id="customer_feedback" name="customer_feedback" required></textarea>
-    <label for="category">Category</label>
-    <select id="category" name="category">
-      <option>General</option><option>Delivery</option><option>Product</option><option>Customer Service</option><option>Pricing</option>
-    </select>
-    <button type="submit">Submit feedback</button>
-    <p id="status" role="status"></p>
-  </form>
+  <main>
+    <div class="top">
+      <div><h1 id="page-title">Welcome back! 👋</h1><p class="muted" id="page-sub">Here’s what your customers are saying.</p></div>
+      <div><button type="button" id="theme-toggle" class="theme-btn" aria-label="Switch between light and dark mode"></button><span class="muted" id="today"></span></div>
+    </div>
 
-  <section>
-    <h2>Summary</h2>
-    <div id="summary-cards" class="cards">Loading summary…</div>
-  </section>
-  <section>
-    <h2>Common keywords</h2>
-    <ul id="keyword-list"><li>Loading keywords…</li></ul>
-  </section>
-  <section>
-    <h2>Customer feedback</h2>
-    <div id="feedback-table">Loading feedback…</div>
-  </section>
+    <div id="summary-cards" class="cards" data-views="dashboard analytics">Loading summary…</div>
 
+    <div class="row" data-views="dashboard analytics">
+      <section class="panel"><h2>Feedback Trend</h2><p class="muted">Last 7 days</p><div id="trend-chart"></div></section>
+      <section class="panel"><h2>Top Keywords</h2><p class="muted">Most common words in feedback</p><div id="keyword-list">Loading keywords…</div></section>
+      <section class="panel"><h2>Feedback Categories</h2><div id="category-chart" class="donut-wrap">Loading…</div></section>
+    </div>
+
+    <form id="feedback-form" class="panel" data-views="submit">
+      <h2>Submit Feedback</h2>
+      <label for="customer_feedback">Your feedback</label>
+      <textarea id="customer_feedback" name="customer_feedback" required></textarea>
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option>General</option><option>Delivery</option><option>Product</option><option>Customer Service</option><option>Pricing</option><option>Feature Request</option>
+      </select>
+      <button type="submit">Submit feedback</button>
+      <p id="status" role="status"></p>
+    </form>
+
+    <section class="panel" data-views="dashboard all-feedback">
+      <h2 id="table-title">Recent Feedback</h2>
+      <div id="feedback-table">Loading feedback…</div>
+    </section>
+  </main>
+
+  <script>document.getElementById("today").textContent = new Date().toLocaleDateString(undefined, {year:"numeric", month:"long", day:"numeric"});
+    const root = document.documentElement, toggle = document.getElementById("theme-toggle");
+    const syncLabel = () => { toggle.textContent = root.dataset.theme === "dark" ? "☀️ Light" : "🌙 Dark"; };
+    syncLabel();
+    toggle.addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+      syncLabel();
+    });
+
+    // Sidebar views: each link shows only its own section
+    const views = {
+      "dashboard": ["Welcome back! 👋", "Here’s what your customers are saying.", "Recent Feedback"],
+      "submit": ["Submit Feedback", "Share your experience with us.", ""],
+      "all-feedback": ["All Feedback", "Every submission, newest first.", "All Feedback"],
+      "analytics": ["Analytics", "Detailed insights from customer feedback.", ""],
+    };
+    function showView() {
+      let view = location.hash.slice(1);
+      if (!views[view]) view = "dashboard";
+      document.querySelectorAll("[data-views]").forEach((el) => {
+        el.hidden = !el.dataset.views.split(" ").includes(view);
+      });
+      document.querySelectorAll(".sidebar a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + view));
+      const [title, sub, tableTitle] = views[view];
+      document.getElementById("page-title").textContent = title;
+      document.getElementById("page-sub").textContent = sub;
+      document.getElementById("table-title").textContent = tableTitle;
+      const wantAll = view === "all-feedback";
+      if (window.showAllFeedback !== wantAll) {
+        window.showAllFeedback = wantAll;
+        if (window.loadFeedbackTable) window.loadFeedbackTable();
+      }
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", showView);
+    document.addEventListener("DOMContentLoaded", showView);
+  </script>
   <script src="{{ url_for('static', filename='member5_feedback_form.js') }}" defer></script>
   <script src="{{ url_for('static', filename='member6_summary_cards.js') }}" defer></script>
   <script src="{{ url_for('static', filename='member7_keyword_chart.js') }}" defer></script>
