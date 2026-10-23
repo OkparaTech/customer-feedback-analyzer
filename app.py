@@ -68,14 +68,26 @@ def fetch_all_feedback():
 # =====================================================================
 # 2. TEXT PREPROCESSING  (Member 2)
 # =====================================================================
+
+allowed_punct = [",", ".", "-", "'", "*", "$", "&", "#", "!"]
+
+
 def clean_feedback(text):
-    """Lowercase, strip punctuation/special characters, fix extra spaces."""
+    """Lowercase, remove unwanted punctuation/special characters, fix extra spaces."""
     if not isinstance(text, str):
         return ""
+
     text = text.lower()
-    text = re.sub(r"[^\w\s]", " ", text)      # remove punctuation/symbols
-    text = re.sub(r"_", " ", text)            # \w keeps underscores
-    return re.sub(r"\s+", " ", text).strip()  # collapse extra spaces
+
+    # Keep letters, numbers, spaces, and the allowed punctuation
+    allowed = re.escape("".join(allowed_punct))
+    text = re.sub(rf"[^\w\s{allowed}]", " ", text)
+
+    # Remove underscores because \w includes them
+    text = re.sub(r"_", " ", text)
+
+    # Collapse extra spaces
+    return re.sub(r"\s+", " ", text).strip()
 
 
 # =====================================================================
@@ -131,10 +143,10 @@ NEGATIVE_WORDS = {
     "useless", "horrible", "delay", "delayed", "damaged", "wrong", "missing",
     "refund", "complaint", "problem", "problems", "issue", "issues",
     "difficult", "confusing", "frustrating", "annoying", "hate", "waste",
-    "expensive", "overpriced", "pricey",
+    "expensive", "overpriced", "pricey", 
 }
 NEGATIVE_PHRASES = ("too high", "too expensive", "too slow", "not working",
-                    "doesn't work", "does not work", "didn't work")
+                    "doesn't work", "does not work", "didn't work", "are not")
 NEGATORS = {"not", "no", "never", "dont", "don't", "isn't", "wasn't",
             "cant", "can't", "hardly", "wont", "won't", "didn't"}
 FEATURE_WORDS = {"add", "wish", "feature", "features", "suggest", "suggestion",
@@ -253,7 +265,12 @@ def save_feedback():
     if len(text) > MAX_LENGTH:
         return jsonify(error=f"customer_feedback must be {MAX_LENGTH} characters or fewer"), 400
 
+    
     category = categorize_feedback(text)
+    text = clean_feedback(text)
+    if not text:
+        return jsonify(error="customer_feedback cannot be empty"), 400
+
     created_at = datetime.now(timezone.utc).isoformat()
 
     db = get_db()

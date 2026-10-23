@@ -26,6 +26,20 @@ class ApiTests(unittest.TestCase):
         response = self.client.post("/feedback", json={"customer_feedback": " "})
         self.assertEqual(response.status_code, 400)
 
+    def test_post_feedback_cleans_text_before_saving(self):
+        response = self.client.post(
+            "/feedback", json={"customer_feedback": "  Doesn't work!!!  "}
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json["customer_feedback"], "doesn t work")
+        self.assertEqual(response.json["category"], "Negative")
+
+    def test_post_feedback_rejects_text_that_cleans_to_empty(self):
+        response = self.client.post("/feedback", json={"customer_feedback": "!!!"})
+
+        self.assertEqual(response.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()
