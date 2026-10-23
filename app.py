@@ -162,11 +162,43 @@ FEATURE_WORDS = {"add", "wish", "feature", "features", "suggest", "suggestion",
 FEATURE_PHRASES = ("would be nice", "would love", "would be great",
                    "please add", "i wish", "it would be")
 
+# Words that show which topic a message is really about
+TOPIC_KEYWORDS = {
+    "Delivery": {"delivery", "delivered", "deliver", "shipping", "shipped", "shipment",
+                 "courier", "dispatch", "arrived", "arrive", "package", "parcel",
+                 "tracking", "rider", "driver", "late"},
+    "Pricing": {"price", "prices", "pricing", "cost", "costs", "expensive", "cheap",
+                "cheaper", "overpriced", "pricey", "discount", "fee", "fees",
+                "charge", "charged", "worth", "money", "billing", "bill", "paid"},
+    "Product": {"product", "products", "quality", "item", "items", "size", "color",
+                "colour", "defective", "material", "durable", "goods", "battery", "screen"},
+    "Customer Service": {"service", "support", "staff", "agent", "representative",
+                         "rude", "unhelpful", "response", "responded", "reply", "replied", "care"},
+}
+
 
 def is_feature_request(text):
     lowered = text.lower()
     tokens = re.findall(r"[a-z']+", lowered)
     return any(p in lowered for p in FEATURE_PHRASES) or any(t in FEATURE_WORDS for t in tokens)
+
+
+def detect_topic(text, chosen="General"):
+    """Keep the user's topic unless the text clearly belongs to a different one."""
+    if chosen == "Feature Request":
+        return chosen
+    lowered = text.lower()
+    tokens = re.findall(r"[a-z']+", lowered)
+    scores = {t: sum(1 for w in tokens if w in words) for t, words in TOPIC_KEYWORDS.items()}
+    if "$" in lowered or "₦" in lowered:
+        scores["Pricing"] += 1
+    top = max(scores.values())
+    if top == 0:
+        return chosen
+    best = [t for t, n in scores.items() if n == top]
+    if chosen in best or len(best) != 1:
+        return chosen                      # already right, or too unclear to change
+    return best[0]
 
 
 def analyze_sentiment(text):
@@ -283,6 +315,7 @@ def save_feedback():
     category = data.get("category")
     if category not in TOPICS:
         category = "General"
+    category = detect_topic(text, category)
     if category == "General" and is_feature_request(text):
         category = "Feature Request"
     sentiment = analyze_sentiment(text)
