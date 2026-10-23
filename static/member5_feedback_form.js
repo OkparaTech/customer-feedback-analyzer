@@ -21,6 +21,7 @@ if (feedbackForm) {
       feedbackForm.reset();
       if (typeof window.loadFeedbackSummary === "function") window.loadFeedbackSummary();
       if (typeof window.loadFeedbackTable === "function") window.loadFeedbackTable();
+      if (typeof window.loadKeywordChart === "function") window.loadKeywordChart();
     } catch (error) {
       status.textContent = error.message;
     }

@@ -49,17 +49,24 @@ def init_db():
             CREATE TABLE IF NOT EXISTS feedback (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_feedback TEXT NOT NULL,
-                category TEXT NOT NULL DEFAULT 'Neutral',
+                category TEXT NOT NULL DEFAULT 'General',
+                sentiment TEXT NOT NULL DEFAULT 'Neutral',
                 created_at TEXT NOT NULL
             )
             """
         )
+        columns = [r[1] for r in conn.execute("PRAGMA table_info(feedback)")]
+        if "sentiment" not in columns:  # upgrade an older database
+            conn.execute("ALTER TABLE feedback ADD COLUMN sentiment TEXT NOT NULL DEFAULT 'Neutral'")
+            for row_id, text in conn.execute("SELECT id, customer_feedback FROM feedback").fetchall():
+                conn.execute("UPDATE feedback SET sentiment = ? WHERE id = ?",
+                             (analyze_sentiment(text), row_id))
         conn.commit()
 
 
 def fetch_all_feedback():
     rows = get_db().execute(
-        "SELECT id, customer_feedback, category, created_at "
+        "SELECT id, customer_feedback, category, sentiment, created_at "
         "FROM feedback ORDER BY id DESC"
     ).fetchall()
     return [dict(row) for row in rows]
@@ -68,7 +75,6 @@ def fetch_all_feedback():
 # =====================================================================
 # 2. TEXT PREPROCESSING  (Member 2)
 # =====================================================================
-
 allowed_punct = [",", ".", "-", "'", "*", "$", "&", "#", "!"]
 
 
@@ -114,7 +120,8 @@ def count_keywords(feedback_entries, top_n=10):
     words = []
     for entry in feedback_entries:
         text = entry.get("customer_feedback", "") if isinstance(entry, dict) else entry
-        for word in clean_feedback(text).split():
+        for word in re.findall(r"[a-z0-9']+", clean_feedback(text)):
+            word = word.strip("'")
             if word not in STOPWORDS and len(word) > 1 and not word.isdigit():
                 words.append(word)
     return [
@@ -126,7 +133,8 @@ def count_keywords(feedback_entries, top_n=10):
 # =====================================================================
 # 4. CATEGORIZATION & ANALYTICS  (Member 4)
 # =====================================================================
-CATEGORIES = ["Positive", "Neutral", "Negative", "Feature Request"]
+SENTIMENTS = ["Positive", "Neutral", "Negative"]
+TOPICS = ["General", "Delivery", "Product", "Customer Service", "Pricing", "Feature Request"]
 
 POSITIVE_WORDS = {
     "good", "great", "excellent", "amazing", "awesome", "love", "loved", "happy",
@@ -143,7 +151,7 @@ NEGATIVE_WORDS = {
     "useless", "horrible", "delay", "delayed", "damaged", "wrong", "missing",
     "refund", "complaint", "problem", "problems", "issue", "issues",
     "difficult", "confusing", "frustrating", "annoying", "hate", "waste",
-    "expensive", "overpriced", "pricey", 
+    "expensive", "overpriced", "pricey",
 }
 NEGATIVE_PHRASES = ("too high", "too expensive", "too slow", "not working",
                     "doesn't work", "does not work", "didn't work", "are not")
@@ -155,14 +163,16 @@ FEATURE_PHRASES = ("would be nice", "would love", "would be great",
                    "please add", "i wish", "it would be")
 
 
-def categorize_feedback(text):
-    """Rule-based category: Feature Request, Positive, Negative or Neutral."""
+def is_feature_request(text):
     lowered = text.lower()
     tokens = re.findall(r"[a-z']+", lowered)
+    return any(p in lowered for p in FEATURE_PHRASES) or any(t in FEATURE_WORDS for t in tokens)
 
-    if any(p in lowered for p in FEATURE_PHRASES) or any(t in FEATURE_WORDS for t in tokens):
-        return "Feature Request"
 
+def analyze_sentiment(text):
+    """Rule-based sentiment: Positive, Neutral or Negative."""
+    lowered = text.lower()
+    tokens = re.findall(r"[a-z']+", lowered)
     positive = 0
     negative = sum(1 for p in NEGATIVE_PHRASES if p in lowered)
     for i, token in enumerate(tokens):
@@ -195,14 +205,17 @@ def _entry_date(entry):
 def build_analytics(entries, top_n=10):
     total = len(entries)
 
-    counts = Counter(e["category"] for e in entries)
-    category_counts = {c: counts.get(c, 0) for c in CATEGORIES}
-    for extra, n in counts.items():          # keep any unexpected category
+    def pct(n):
+        return round(100 * n / total, 1) if total else 0.0
+
+    sent = Counter(e.get("sentiment", "Neutral") for e in entries)
+    sentiment_counts = {s: sent.get(s, 0) for s in SENTIMENTS}
+    sentiment_percentages = {s: pct(n) for s, n in sentiment_counts.items()}
+    cats = Counter(e["category"] for e in entries)
+    category_counts = {c: cats.get(c, 0) for c in TOPICS}
+    for extra, n in cats.items():            # keep any unexpected category
         category_counts.setdefault(extra, n)
-    category_percentages = {
-        c: (round(100 * n / total, 1) if total else 0.0)
-        for c, n in category_counts.items()
-    }
+    category_percentages = {c: pct(n) for c, n in category_counts.items()}
 
     today = datetime.now(timezone.utc).date()
     per_day = Counter(d for d in map(_entry_date, entries) if d)
@@ -217,6 +230,8 @@ def build_analytics(entries, top_n=10):
 
     return {
         "total_feedback": total,
+        "sentiment_counts": sentiment_counts,
+        "sentiment_percentages": sentiment_percentages,
         "category_counts": category_counts,
         "category_percentages": category_percentages,
         "top_keywords": count_keywords(entries, top_n),
@@ -265,8 +280,12 @@ def save_feedback():
     if len(text) > MAX_LENGTH:
         return jsonify(error=f"customer_feedback must be {MAX_LENGTH} characters or fewer"), 400
 
-    
-    category = categorize_feedback(text)
+    category = data.get("category")
+    if category not in TOPICS:
+        category = "General"
+    if category == "General" and is_feature_request(text):
+        category = "Feature Request"
+    sentiment = analyze_sentiment(text)
     text = clean_feedback(text)
     if not text:
         return jsonify(error="customer_feedback cannot be empty"), 400
@@ -275,8 +294,8 @@ def save_feedback():
 
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO feedback (customer_feedback, category, created_at) VALUES (?, ?, ?)",
-        (text, category, created_at),
+        "INSERT INTO feedback (customer_feedback, category, sentiment, created_at) VALUES (?, ?, ?, ?)",
+        (text, category, sentiment, created_at),
     )
     db.commit()
 
@@ -284,6 +303,7 @@ def save_feedback():
         id=cursor.lastrowid,
         customer_feedback=text,
         category=category,
+        sentiment=sentiment,
         created_at=created_at,
     ), 201
 
