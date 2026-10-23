@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Customer Feedback Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>try { var saved = localStorage.getItem("theme"); } catch (e) {} document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");</script>
   <style>
     :root { --navy:#0f1b3d; --blue:#2563eb; --bg:#f5f7fb; --card:#fff; --text:#111c3b; --muted:#6b7794; --line:#e6eaf2; color-scheme:light; }
@@ -12,7 +15,7 @@
     [data-theme="dark"] .b-Positive{background:#143d2a;color:#7ee0a8} [data-theme="dark"] .b-Neutral{background:#4a3d12;color:#f5d26b} [data-theme="dark"] .b-Negative{background:#4a1f1f;color:#ff9a9a}
     button.theme-btn { background:var(--card); color:var(--text); border:1px solid var(--line); margin:0 .6rem 0 0; }
     * { box-sizing: border-box; }
-    body { margin:0; display:flex; min-height:100vh; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); }
+    body { margin:0; display:flex; min-height:100vh; font-family:"Playfair Display",Georgia,"Times New Roman",serif; font-variant-numeric:lining-nums; background:var(--bg); color:var(--text); }
     .sidebar { width:230px; flex-shrink:0; background:var(--navy); color:#fff; padding:1.2rem .8rem; position:sticky; top:0; height:100vh; }
     .brand { font-weight:700; padding:.4rem .6rem 1.3rem; line-height:1.25; }
     .sidebar a { display:block; color:#cfd8f3; text-decoration:none; padding:.7rem .8rem; border-radius:8px; margin-bottom:.25rem; }
